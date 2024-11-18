@@ -1,0 +1,160 @@
+/* General Styles for Page */
+body {
+    font-family: 'Arial', sans-serif; /* Same font for the entire page */
+    line-height: 1.6;
+    margin: 2em;
+    background-color: #ffffff; /* White background for print-friendly layout */
+    color: #333; /* Dark text for contrast */
+}
+
+h1, h2 {
+    color: #333;
+    font-size: 2em;
+    margin-bottom: 0.5em;
+}
+
+h2 {
+    font-size: 1.8em;
+}
+
+/* Container for all elements (dropdown + buttons) in one line */
+.homeroom-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+label {
+    width: 20%; /* 20% for the label */
+    margin-right: 10px;
+    font-family: 'Arial', sans-serif; /* Ensure the label uses the same font */
+    font-size: 1.1em; /* Make the label font consistent */
+}
+
+select {
+    width: 40%; /* 40% for the dropdown */
+    font-family: 'Arial', sans-serif; /* Ensure the dropdown uses the same font */
+    font-size: 1.1em; /* Make the dropdown font consistent */
+}
+
+button {
+    width: 20%; /* 20% for the Refresh button */
+    padding: 0.8em;
+    font-size: 1.1em;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+    margin-right: 10px;
+    border-radius: 4px;
+}
+
+/* Print button styling */
+button#printButton {
+    background-color: #28a745; /* Green */
+    color: white;
+}
+
+button#refreshButton {
+    background-color: #007bff; /* Blue */
+    color: white;
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
+/* Table Styling with Black Borders */
+table {
+    width: 80%; /* Set table width to 80% of the window */
+    margin: 0 auto; /* Center the table horizontally */
+    border-collapse: collapse;
+    margin-top: 1em;
+}
+
+th, td {
+    padding: 1em;
+    border: 2px solid black; /* Strong black border for printing */
+    text-align: left;
+}
+
+th {
+    background-color: #f0f0f0; /* Light grey background for header */
+    font-weight: bold;
+}
+
+td {
+    background-color: #ffffff; /* White background for rows */
+}
+
+tr:nth-child(even) td {
+    background-color: #f9f9f9; /* Alternate row shading for readability */
+}
+
+/* Loading Message */
+.loading {
+    color: #555;
+    font-style: italic;
+    display: none;
+}
+
+/* Print Styling */
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+        font-size: 12pt; /* Slightly smaller text for printing */
+        line-height: 1.4;
+    }
+
+    h1, h2 {
+        page-break-before: always; /* Add page breaks before headings */
+    }
+
+    button {
+        display: none; /* Hide buttons during print */
+    }
+
+    select {
+        width: auto; /* Set select dropdown to auto width */
+    }
+
+    .loading {
+        display: none; /* Hide loading message during print */
+    }
+
+    table {
+        width: 100%; /* Ensure the table uses the full page width */
+        page-break-after: always; /* Ensure the table fits within the page */
+    }
+
+    td, th {
+        padding: 0.8em;
+        border: 2px solid black; /* Ensure strong black border in print as well */
+    }
+
+    td {
+        font-size: 1em;
+    }
+
+    tr:nth-child(even) td {
+        background-color: #f9f9f9;
+    }
+}
+
+/* Responsiveness for smaller screens */
+@media (max-width: 768px) {
+    table {
+        width: 95%; /* Adjust table width for smaller screens */
+    }
+
+    th, td {
+        font-size: 0.9em; /* Reduce font size for smaller screens */
+    }
+
+    select, button {
+        width: 95%; /* Set dropdown and button width to 95% for smaller screens */
+    }
+}

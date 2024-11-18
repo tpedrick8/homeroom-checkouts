@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List of Homeroom Book Checkouts</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .loading { color: #555; font-style: italic; display: none; }
+    </style>
+</head>
+<body>
+    <h1>Homeroom Book Checkouts</h1>
+
+    <!-- Container for all the elements in one line -->
+    <div class="homeroom-container">
+        <label for="homeroom">Select Homeroom:</label>
+        <select id="homeroom" onchange="fetchHomeroomData()">
+            <option value="">Select a homeroom</option>
+        </select>
+        <button id="refreshButton" onclick="refreshData()" style="display: none;">Refresh</button>
+        <button id="printButton" onclick="printTable()" style="display: none;">Print Table</button>
+    </div>
+
+    <p id="loadingMessage" class="loading">Loading data, please wait...</p>
+
+    <!-- New Table for How Many Books Can You Borrow -->
+    <h2>How Many Books Can You Borrow?</h2>
+    <table id="allowedBooksGroupingTable">
+        <thead>
+            <tr>
+                <th id="headerAllowed1">1 Book</th>
+                <th id="headerAllowed2">2 Books</th>
+                <th id="headerAllowed3">3 Books</th>
+                <th id="headerAllowed4">4 Books</th>
+                <th id="headerAllowed5">5 Books</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td id="allowed1"></td>
+                <td id="allowed2"></td>
+                <td id="allowed3"></td>
+                <td id="allowed4"></td>
+                <td id="allowed5"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <br>
+
+    <!-- Existing Table for Student Data -->
+    <h2>Student Book Checkout Information</h2>
+    <table id="studentDataTable">
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Nickname</th>
+                <th>Books Checked Out</th>
+                <th>Overdue Books</th>
+                <th id="sortAllowedBooks">Allowed Books</th> <!-- Added id for sorting -->
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="5">No data yet.</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+        let sortOrder = true; // true for ascending, false for descending
+        let currentHomeroom = ""; // To store the current homeroom name
+
+        // Load homerooms from API
+        async function loadHomerooms() {
+            try {
+                const response = await fetch('/api/homerooms');
+                const homerooms = await response.json();
+
+                console.log("Homerooms fetched:", homerooms); // Debug: log homerooms
+
+                const dropdown = document.getElementById('homeroom');
+                homerooms.forEach(homeroom => {
+                    const option = document.createElement('option');
+                    option.value = homeroom;
+                    option.textContent = homeroom;
+                    dropdown.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Error loading homerooms:", error.message);
+            }
+        }
+
+        // Fetch student data for the selected homeroom
+        async function fetchHomeroomData() {
+            const homeroom = document.getElementById('homeroom').value;
+            if (!homeroom) return;
+
+            currentHomeroom = homeroom; // Store the selected homeroom name
+
+            // Show loading indicator and hide tables/refresh button during fetch
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('studentDataTable').style.display = 'none';
+            document.getElementById('allowedBooksGroupingTable').style.display = 'none'; // Hide the table during loading
+            document.getElementById('refreshButton').style.display = 'none';
+            document.getElementById('printButton').style.display = 'none'; // Hide the print button initially
+
+            try {
+                const response = await fetch(`/api/homerooms/${homeroom}/students`);
+                if (!response.ok) {
+                    throw new Error(`Homeroom "${homeroom}" not found.`);
+                }
+                const students = await response.json();
+
+                console.log("Students fetched:", students); // Debug: log student data
+
+                if (!Array.isArray(students)) {
+                    throw new Error("Unexpected data format for students");
+                }
+
+                displayResults(students);
+                displayAllowedBooksGrouping(students);
+
+                // Show table and refresh button after data load
+                document.getElementById('studentDataTable').style.display = 'table';
+                document.getElementById('allowedBooksGroupingTable').style.display = 'table'; // Show the grouping table
+                document.getElementById('refreshButton').style.display = 'block';
+                document.getElementById('printButton').style.display = 'block'; // Show the print button
+            } catch (error) {
+                console.error("Error fetching homeroom data:", error.message);
+                const tableBody = document.getElementById('studentDataTable').querySelector('tbody');
+                tableBody.innerHTML = `<tr><td colspan="5">${error.message}</td></tr>`;
+            } finally {
+                // Hide loading indicator
+                document.getElementById('loadingMessage').style.display = 'none';
+            }
+        }
+
+        // Display student data in the table
+        function displayResults(students) {
+            const tableBody = document.getElementById('studentDataTable').querySelector('tbody');
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            students.forEach(student => {
+                console.log("Processing student:", student); // Debug: log individual student data
+
+                // Check if necessary fields are missing and handle them gracefully
+                if (!student.name || !student.nickname || student.booksCheckedOut === undefined || student.finalAllowance === undefined) {
+                    console.error(`Missing required fields for student: ${student.name}`);
+                    student.finalAllowance = student.finalAllowance || 1; // Default to 1 if finalAllowance is missing
+                }
+
+                const allowedBooks = student.finalAllowance; // Directly use finalAllowance for allowed books
+
+                const row = `
+                    <tr>
+                        <td>${student.name}</td>
+                        <td>${student.nickname}</td>
+                        <td>${student.booksCheckedOut}</td>
+                        <td>${student.overdueBooks}</td>
+                        <td>${allowedBooks}</td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        // Display students grouped by allowed books
+        function displayAllowedBooksGrouping(students) {
+            const allowedGroups = {
+                '1': [],
+                '2': [],
+                '3': [],
+                '4': [],
+                '5': []
+            };
+
+            students.forEach(student => {
+                const allowedBooks = student.finalAllowance || 0;
+                if (allowedBooks >= 1 && allowedBooks <= 5) {
+                    allowedGroups[allowedBooks].push(student.nickname); // Use nickname here
+                }
+            });
+
+            // Display students in each "Allowed" column and hide column if "No students"
+            for (let i = 1; i <= 5; i++) {
+                const cell = document.getElementById(`allowed${i}`);
+                const columnHeader = document.getElementById(`headerAllowed${i}`); // Access the corresponding header
+                const columnCells = document.querySelectorAll(`#allowedBooksGroupingTable td:nth-child(${i})`); // Get all data cells in that column
+
+                if (allowedGroups[i].length > 0) {
+                    cell.innerHTML = allowedGroups[i].join('<br>');
+                    // Ensure the header and column cells are visible
+                    if (columnHeader) {
+                        columnHeader.style.display = 'table-cell';
+                    }
+                    columnCells.forEach(colCell => colCell.style.display = 'table-cell'); // Show all td elements in the column
+                } else {
+                    cell.innerHTML = '';
+                    // Hide the header and column cells if no students
+                    if (columnHeader) {
+                        columnHeader.style.display = 'none';
+                    }
+                    columnCells.forEach(colCell => colCell.style.display = 'none'); // Hide all td elements in the column
+                }
+            }
+        }
+
+        // Refresh data
+        function refreshData() {
+            fetchHomeroomData(); // Call the fetch function to reload data
+        }
+
+        // Function to print only the "How Many Books Can You Borrow?" table with Homeroom and Title
+        function printTable() {
+            const tableContent = document.getElementById('allowedBooksGroupingTable').outerHTML;
+            const headerContent = `
+                <h2>How Many Books Can You Borrow?</h2>
+                <h3>Homeroom: ${currentHomeroom}</h3>
+            `;
+
+            const originalContent = document.body.innerHTML;
+            document.body.innerHTML = headerContent + tableContent; // Replace body content with header and table
+
+            window.print(); // Trigger print dialog
+
+            // Restore the original content after printing
+            document.body.innerHTML = originalContent;
+        }
+
+        // Load homerooms on page load
+        loadHomerooms();
+    </script>
+</body>
+</html>
